@@ -127,7 +127,7 @@ public class K8sStack : Stack
                         Target = new MetricTargetArgs
                         {
                             Type = "Utilization",
-                            AverageUtilization = 50
+                            AverageUtilization = 20
                         }
                     }
                 },
@@ -152,7 +152,7 @@ public class K8sStack : Stack
                             new HPAScalingPolicyArgs
                             {
                                 Type = "cpu",
-                                Value = 50,
+                                Value = 20,
                                 PeriodSeconds = 30
                             }
                         }
