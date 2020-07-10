@@ -1,18 +1,16 @@
 using K8sDemo;
 using Pulumi;
-using Pulumi.Kubernetes.Autoscaling.V1;
 using Pulumi.Kubernetes.Core.V1;
 using Pulumi.Kubernetes.Types.Inputs.Core.V1;
 using Pulumi.Kubernetes.Types.Inputs.Apps.V1;
 using Pulumi.Kubernetes.Types.Inputs.Autoscaling.V2Beta2;
 using Pulumi.Kubernetes.Types.Inputs.Meta.V1;
-using CrossVersionObjectReferenceArgs = Pulumi.Kubernetes.Types.Inputs.Autoscaling.V1.CrossVersionObjectReferenceArgs;
-using HorizontalPodAutoscalerSpecArgs = Pulumi.Kubernetes.Types.Inputs.Autoscaling.V1.HorizontalPodAutoscalerSpecArgs;
 
 public class K8sStack : Stack
 {
     public K8sStack()
     {
+        var config = new Config();
         var demoAppLabels = new InputMap<string>
         {
             { "app", "dotnetapp" }
@@ -98,9 +96,12 @@ public class K8sStack : Stack
             }
         });
         
-        var clusterAutoScaler = new ClusterAutoScaler("ob-eks-cluster-demo", "cluster-autoscaler");
+        //install the cluster autoscaler
+        var clusterAutoScaler = new ClusterAutoScaler(config.Require("cluster-name"), "cluster-autoscaler");
+        //install the metrics server
         var metricsServer = new MetricsServer();
 
+        //create an autoscaling service for the dotnet app
         var autoScalingService = new Pulumi.Kubernetes.Autoscaling.V2Beta2.HorizontalPodAutoscaler("hpa-example", new HorizontalPodAutoscalerArgs()
         {
             Metadata = new ObjectMetaArgs
