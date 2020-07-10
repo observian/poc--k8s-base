@@ -11,5 +11,8 @@ Make sure you have the `kubeconfig` from your cluster in your current `kubectl` 
 
 Navigate to the K8sInfrastructure folder
 
+Follow the [Pulumi Getting Started Guide](https://www.pulumi.com/docs/get-started/)
 
-Run `pulumi up`
+When choosing a stack name, choose `dev`
+
+Run `pulumi up` to install 
