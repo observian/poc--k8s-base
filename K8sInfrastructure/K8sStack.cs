@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using K8sDemo;
 using Pulumi;
 using Pulumi.Kubernetes.Core.V1;
@@ -52,22 +53,40 @@ public class K8sStack : Stack
                 {
                     Metadata = new ObjectMetaArgs
                     {
-                        Labels = demoAppLabels
+                        Labels = demoAppLabels,
+                        Annotations = new InputMap<string>
+                        {
+                            {"iam.amazonaws.com/role", "arn:aws:iam::592516922976:role/aws_eks_pod_assume_role"}
+                        }
                     },
                     Spec = new PodSpecArgs
                     {
                         Containers = new ContainerArgs
                         {
                             Name = "dotnetapp",
-                            Image = "mcr.microsoft.com/dotnet/core/samples:aspnetapp",
+                            Image = "592516922976.dkr.ecr.us-west-2.amazonaws.com/ssm-tester:1.1",
                             Resources = new ResourceRequirementsArgs
                             {
                                 Requests = new InputMap<string>
                                 {
                                     { "cpu", "300m" }
                                 }
+                            },
+                            Env = new List<EnvVarArgs>
+                            {
+                                new EnvVarArgs
+                                {
+                                    Name = "SSM_PARAMETER_PATH",
+                                    Value = "/k8s-testing/development"
+                                },
+                                new EnvVarArgs
+                                {
+                                    Name = "AWS_REGION",
+                                    Value = "us-west-2"
+                                }
                             }
                         }
+                        
                     }
                     
                 }
@@ -100,6 +119,8 @@ public class K8sStack : Stack
         var clusterAutoScaler = new ClusterAutoScaler(config.Require("cluster-name"), "cluster-autoscaler");
         //install the metrics server
         var metricsServer = new MetricsServer();
+        
+        var kube2Iam = new Kube2Iam();
 
         //create an autoscaling service for the dotnet app
         var autoScalingService = new Pulumi.Kubernetes.Autoscaling.V2Beta2.HorizontalPodAutoscaler("hpa-example", new HorizontalPodAutoscalerArgs()
