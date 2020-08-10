@@ -58,7 +58,7 @@ namespace K8sDemo
 							Containers = new ContainerArgs
 							{
 								Name = "dotnetapp",
-								Image = "592516922976.dkr.ecr.us-west-2.amazonaws.com/ssm-tester:1.1",
+								Image = "observian/tcptest:1.2",
 								Resources = new ResourceRequirementsArgs
 								{
 									Requests = new InputMap<string>

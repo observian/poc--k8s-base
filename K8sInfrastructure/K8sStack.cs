@@ -13,6 +13,8 @@ public class K8sStack : Stack
     {
         var config = new Config();
         
+        var harnessDelegate = new HarnessWorkload();
+        
         //TODO: istio layers
         //TODO: application layers
         
@@ -31,6 +33,7 @@ public class K8sStack : Stack
         
         var kube2Iam = new Kube2Iam();
         
+        var testDeployment = new DemoApplication();
         
         
         
