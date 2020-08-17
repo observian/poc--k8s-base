@@ -1,5 +1,7 @@
+using System;
 using System.Collections.Generic;
 using Pulumi;
+using Pulumi.Kubernetes;
 using Pulumi.Kubernetes.ApiRegistration.V1;
 using Pulumi.Kubernetes.Apps.V1;
 using Pulumi.Kubernetes.Core.V1;
@@ -20,8 +22,11 @@ namespace K8sDemo
 {
 	public class Kube2Iam
 	{
-		public Kube2Iam()
+		public Kube2Iam(Provider provider)
 		{
+			
+			
+			
 			var clusterRole = new ClusterRole("kube2Iam-clusterRole", new ClusterRoleArgs
 			{
 				ApiVersion = "rbac.authorization.k8s.io/v1",
@@ -48,6 +53,9 @@ namespace K8sDemo
 						}
 					}
 				}
+			}, new CustomResourceOptions
+			{
+				Provider = provider
 			});
 
 			var clusterRoleBinding = new ClusterRoleBinding("kube2IamClusterRoleBinding", new ClusterRoleBindingArgs
@@ -73,6 +81,9 @@ namespace K8sDemo
 					Name = "kube2iam",
 					ApiGroup = "rbac.authorization.k8s.io"
 				}
+			}, new CustomResourceOptions
+			{
+				Provider = provider
 			});
 
 			var kube2IamServiceAccount = new ServiceAccount("kube2iamserviceaccount", new ServiceAccountArgs
@@ -84,6 +95,9 @@ namespace K8sDemo
 					Name = "kube2iam",
 					Namespace = "default"
 				}
+			}, new CustomResourceOptions
+			{
+				Provider = provider
 			});
 
 			var kube2iamDaemonSet = new DaemonSet("kube2iamDaemonset", new DaemonSetArgs

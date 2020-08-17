@@ -1,15 +1,17 @@
 using System.Collections.Generic;
 using Pulumi;
+using Pulumi.Kubernetes;
 using Pulumi.Kubernetes.Core.V1;
 using Pulumi.Kubernetes.Types.Inputs.Apps.V1;
 using Pulumi.Kubernetes.Types.Inputs.Core.V1;
 using Pulumi.Kubernetes.Types.Inputs.Meta.V1;
+using Config = Pulumi.Config;
 
 namespace K8sDemo
 {
 	public class DemoApplication
 	{
-		public DemoApplication()
+		public DemoApplication(Provider provider)
 		{
 			var config = new Config();
 
@@ -25,6 +27,9 @@ namespace K8sDemo
 				{
 					Name = demoNamespaceName
 				}
+			}, new CustomResourceOptions
+			{
+				Provider = provider
 			});
 
 			var deployment = new Pulumi.Kubernetes.Apps.V1.Deployment("dotnetapp-deployment", new DeploymentArgs
@@ -48,10 +53,10 @@ namespace K8sDemo
 						Metadata = new ObjectMetaArgs
 						{
 							Labels = demoAppLabels,
-							Annotations = new InputMap<string>
-							{
-								{"iam.amazonaws.com/role", "arn:aws:iam::592516922976:role/aws_eks_pod_assume_role"}
-							}
+							// Annotations = new InputMap<string>
+							// {
+							// 	{"iam.amazonaws.com/role", "arn:aws:iam::592516922976:role/aws_eks_pod_assume_role"}
+							// }
 						},
 						Spec = new PodSpecArgs
 						{
@@ -70,6 +75,9 @@ namespace K8sDemo
 						}
 					}
 				}
+			}, new CustomResourceOptions
+			{
+				Provider = provider
 			});
 			
 			var dotnetService = new Service("dotnet-service", new ServiceArgs
@@ -92,6 +100,9 @@ namespace K8sDemo
 					Selector = demoAppLabels,
                 
 				}
+			}, new CustomResourceOptions
+			{
+				Provider = provider
 			});
 		}
 	}

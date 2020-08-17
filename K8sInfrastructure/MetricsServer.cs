@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Pulumi;
+using Pulumi.Kubernetes;
 using Pulumi.Kubernetes.ApiRegistration.V1;
 using Pulumi.Kubernetes.Types.Inputs.ApiRegistration.V1;
 using Pulumi.Kubernetes.Types.Inputs.Core.V1;
@@ -18,7 +19,7 @@ namespace K8sDemo
 {
 	public class MetricsServer
 	{
-		public MetricsServer()
+		public MetricsServer(Provider provider)
 		{
 			var clusterRole = new ClusterRole("metrics-server-cluster-role", new ClusterRoleArgs
 			{
@@ -41,6 +42,9 @@ namespace K8sDemo
 						Verbs = new InputList<string> {"get", "list", "watch"}
 					}
 				}
+			}, new CustomResourceOptions
+			{
+				Provider = provider
 			});
 			var metricsClusterRoleBinding = new ClusterRoleBinding("metrics-cluster-role-binding",
 				new ClusterRoleBindingArgs
@@ -64,6 +68,9 @@ namespace K8sDemo
 							Namespace = "kube-system"
 						}
 					}
+				}, new CustomResourceOptions
+				{
+					Provider = provider
 				});
 			var metricsRoleBinding = new RoleBinding("metricsRoleBinding", new RoleBindingArgs
 			{
@@ -87,6 +94,9 @@ namespace K8sDemo
 						Namespace = "kube-system"
 					}
 				}
+			}, new CustomResourceOptions
+			{
+				Provider = provider
 			});
 			var service = new APIService("v1beta1.metrics.k8s.io", new APIServiceArgs
 			{
@@ -108,6 +118,9 @@ namespace K8sDemo
 					GroupPriorityMinimum = 100,
 					VersionPriority = 100
 				}
+			}, new CustomResourceOptions
+			{
+				Provider = provider
 			});
 			var metricsServiceAccount = new ServiceAccount("metrics-service-account", new ServiceAccountArgs
 			{
@@ -116,98 +129,105 @@ namespace K8sDemo
 					Name = "metrics-server",
 					Namespace = "kube-system"
 				}
-			});
-			var metricsServerDeployment = new Pulumi.Kubernetes.Apps.V1.Deployment("metrics-server-deployment", new DeploymentArgs
+			}, new CustomResourceOptions
 			{
-				Metadata = new ObjectMetaArgs
+				Provider = provider
+			});
+			var metricsServerDeployment = new Pulumi.Kubernetes.Apps.V1.Deployment("metrics-server-deployment",
+				new DeploymentArgs
 				{
-					Name = "metrics-server",
-					Namespace = "kube-system",
-					Labels = new InputMap<string>
+					Metadata = new ObjectMetaArgs
 					{
-						{"k8s-app", "metrics-server"}
-					}
-				},
-				Spec = new DeploymentSpecArgs
-				{
-					Selector = new LabelSelectorArgs
-					{
-						MatchLabels = new InputMap<string>()
+						Name = "metrics-server",
+						Namespace = "kube-system",
+						Labels = new InputMap<string>
 						{
 							{"k8s-app", "metrics-server"}
 						}
 					},
-					Template = new PodTemplateSpecArgs
+					Spec = new DeploymentSpecArgs
 					{
-						Metadata = new ObjectMetaArgs
+						Selector = new LabelSelectorArgs
 						{
-							Name = "metrics-server",
-							Labels = new InputMap<string>
+							MatchLabels = new InputMap<string>()
 							{
 								{"k8s-app", "metrics-server"}
 							}
 						},
-						Spec = new PodSpecArgs
+						Template = new PodTemplateSpecArgs
 						{
-							ServiceAccountName = "metrics-server",
-							Volumes = new List<VolumeArgs>
+							Metadata = new ObjectMetaArgs
 							{
-								new VolumeArgs
+								Name = "metrics-server",
+								Labels = new InputMap<string>
 								{
-									Name = "tmp-dir",
-									EmptyDir = { }
+									{"k8s-app", "metrics-server"}
 								}
 							},
-							Containers = new List<ContainerArgs>
+							Spec = new PodSpecArgs
 							{
-								new ContainerArgs
+								ServiceAccountName = "metrics-server",
+								Volumes = new List<VolumeArgs>
 								{
-									Name = "metrics-server",
-									Image = "k8s.gcr.io/metrics-server-amd64:v0.3.6",
-									ImagePullPolicy = "IfNotPresent",
-									Command = new InputList<string>
+									new VolumeArgs
 									{
-										"/metrics-server",
-										"--metric-resolution=30s",
-										"--kubelet-insecure-tls",
-										"--kubelet-preferred-address-types=InternalIP,Hostname,InternalDNS,ExternalDNS,ExternalIP",
-										"--cert-dir=/tmp",
-										"--secure-port=4443"
-									},
-									Ports = new List<ContainerPortArgs>
+										Name = "tmp-dir",
+										EmptyDir = { }
+									}
+								},
+								Containers = new List<ContainerArgs>
+								{
+									new ContainerArgs
 									{
-										new ContainerPortArgs
+										Name = "metrics-server",
+										Image = "k8s.gcr.io/metrics-server-amd64:v0.3.6",
+										ImagePullPolicy = "IfNotPresent",
+										Command = new InputList<string>
 										{
-											Name = "main-port",
-											ContainerPortValue = 4443,
-											Protocol = "TCP"
-										}
-									},
-									SecurityContext = new SecurityContextArgs
-									{
-										ReadOnlyRootFilesystem = true,
-										RunAsNonRoot = true,
-										RunAsUser = 1000
-									},
-									VolumeMounts = new InputList<VolumeMountArgs>
-									{
-										new VolumeMountArgs
+											"/metrics-server",
+											"--metric-resolution=30s",
+											"--kubelet-insecure-tls",
+											"--kubelet-preferred-address-types=InternalIP,Hostname,InternalDNS,ExternalDNS,ExternalIP",
+											"--cert-dir=/tmp",
+											"--secure-port=4443"
+										},
+										Ports = new List<ContainerPortArgs>
 										{
-											Name = "tmp-dir",
-											MountPath = "/tmp"
+											new ContainerPortArgs
+											{
+												Name = "main-port",
+												ContainerPortValue = 4443,
+												Protocol = "TCP"
+											}
+										},
+										SecurityContext = new SecurityContextArgs
+										{
+											ReadOnlyRootFilesystem = true,
+											RunAsNonRoot = true,
+											RunAsUser = 1000
+										},
+										VolumeMounts = new InputList<VolumeMountArgs>
+										{
+											new VolumeMountArgs
+											{
+												Name = "tmp-dir",
+												MountPath = "/tmp"
+											}
 										}
 									}
+								},
+								NodeSelector = new InputMap<string>()
+								{
+									{"kubernetes.io/os", "linux"},
+									{"kubernetes.io/arch", "amd64"}
 								}
-							},
-							NodeSelector = new InputMap<string>()
-							{
-								{"kubernetes.io/os", "linux"},
-								{"kubernetes.io/arch", "amd64"}
 							}
 						}
 					}
-				}
-			});
+				}, new CustomResourceOptions
+				{
+					Provider = provider
+				});
 			var metricsServerService = new Pulumi.Kubernetes.Core.V1.Service("metrics-server-service", new ServiceArgs
 			{
 				ApiVersion = "v1",
@@ -239,6 +259,9 @@ namespace K8sDemo
 						},
 					}
 				}
+			}, new CustomResourceOptions
+			{
+				Provider = provider
 			});
 			var metricsClusterRole = new ClusterRole("metrics-server-cluster-role-2", new ClusterRoleArgs
 			{
@@ -267,6 +290,9 @@ namespace K8sDemo
 						}
 					}
 				}
+			}, new CustomResourceOptions
+			{
+				Provider = provider
 			});
 			var metricsServerClusterRoleBinding = new ClusterRoleBinding("metrics-server-cluster-role-binding",
 				new ClusterRoleBindingArgs
@@ -290,6 +316,9 @@ namespace K8sDemo
 							Namespace = "kube-system"
 						}
 					}
+				}, new CustomResourceOptions
+				{
+					Provider = provider
 				});
 		}
 	}
