@@ -1,3 +1,2 @@
 config:
-  k8s-demo:cluster-name: example-cluster
   k8s-demo:stackreference: soydantaylor/ob-gke-pul/demo

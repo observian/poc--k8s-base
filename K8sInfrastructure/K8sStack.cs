@@ -16,37 +16,26 @@ public class K8sStack : Stack
 {
     public K8sStack()
     {
-        var config = new Config();
+        var pulumiConfig = new Config();
         
-        var k8sStack = new StackReference(config.Require("stackreference"));
+        var k8sStack = new StackReference(pulumiConfig.Require("stackreference"));
         var kubeConfig = k8sStack.Outputs.Apply(x =>
         {
 
-            var config = x.GetValueOrDefault("KubeConfig").ToString();
+            var clusterId = x.GetValueOrDefault("ClusterName").ToString();
+            var kubeConfig = x.GetValueOrDefault("KubeConfig").ToString();
             
             var provider = new Provider("kubernetes", new ProviderArgs
             {
-                
-                Cluster = x.GetValueOrDefault("ClusterName").ToString(),
-                KubeConfig = config
+                Cluster = clusterId,
+                KubeConfig = kubeConfig
             });
+
             var harnessDelegate = new HarnessWorkload(provider);
-        
-            var gremlinNamespace = new Namespace("gremlinNamespace", new NamespaceArgs
-            {
-                Metadata = new ObjectMetaArgs
-                {
-                    Name = "gremlin"
-                }
-            }, new CustomResourceOptions
-            {
-                Provider = provider
-            });
+            var gremlinInstall = new GremlinInstall(provider, clusterId, pulumiConfig);
             var testDeployment = new DemoApplication(provider);
             
-            Console.WriteLine(config);
-            return config?.ToString();
+            return kubeConfig?.ToString();
         });
-        Console.WriteLine(kubeConfig.ToString());
     }
 }
